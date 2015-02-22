@@ -1,5 +1,6 @@
 
-from expression import Expression, UnknownExpression
+from expression import Expression, UnknownExpression, NoopExpression, \
+    ReturnExpression
 
 
 class Disassembler(object):
@@ -22,11 +23,17 @@ class Disassembler(object):
             shift += 8
         return value
 
+    def tell(self):
+        return self.handle.tell()
+
+    def seek(self, ofs, whence=0):
+        return self.handle.seek(ofs, whence)
+
     def __iter__(self):
         return self
 
     def next(self):
-        expr = self.parse()
+        expr = self.parse_one()
         if not expr:
             raise StopIteration()
         return expr
@@ -41,7 +48,13 @@ class Disassembler(object):
     def build(self, func, *args):
         return Expression(self.level, func, *args)
 
-    def parse(self):
+    def noop(self):
+        return NoopExpression()
+
+    def end(self):
+        return ReturnExpression
+
+    def parse_one(self):
         data = self.read_value(4)
         if not data:
             return

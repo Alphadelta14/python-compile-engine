@@ -9,7 +9,7 @@ class Expression(object):
         return '{space}engine.{func}({args})'.format(
             space='    '*self.level,
             func=self.func,
-            args=','.join(str(arg) for arg in self.args))
+            args=', '.join(str(arg) for arg in self.args))
 
 
 class UnknownExpression(object):
@@ -21,3 +21,17 @@ class UnknownExpression(object):
         return '{space}eval(engine.unknown({value:#x}))'.format(
             space='    '*self.level,
             value=self.value)
+
+
+class NoopExpression(object):
+    def __str__(self):
+        return ''
+
+
+class ReturnExpression(object):
+    def __init__(self, level):
+        self.level = level
+
+    def __str__(self):
+        return '{space}return'.format(
+            space='    '*self.level)
