@@ -6,6 +6,10 @@ class Disassembler(object):
     def __init__(self, handle, level=0):
         self.level = level
         self.handle = handle
+        self.start = handle.tell()
+
+    def reset(self):
+        self.handle.seek(self.start)
 
     def read(self, size=None):
         return self.handle.read(size)
@@ -26,6 +30,10 @@ class Disassembler(object):
         if not expr:
             raise StopIteration()
         return expr
+
+    def __str__(self):
+        self.reset()
+        return '\n'.join(str(line) for line in self)
 
     def unknown(self, value):
         return UnknownExpression(self.level, value)
