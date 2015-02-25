@@ -8,9 +8,12 @@ class Disassembler(object):
         self.level = level
         self.handle = handle
         self.start = handle.tell()
+        self.returned = False  # for next()
+        self._parsed_queue = []
 
     def reset(self):
         self.handle.seek(self.start)
+        self.returned = False
 
     def read(self, size=None):
         return self.handle.read(size)
@@ -33,9 +36,21 @@ class Disassembler(object):
         return self
 
     def next(self):
-        expr = self.parse_one()
+        try:
+            expr = self._parsed_queue.pop(0)
+        except:
+            self._parsed_queue = self.parse_next()
+            if not self._parsed_queue:
+                expr = None
+            else:
+                expr = self._parsed_queue.pop(0)
         if not expr:
             raise StopIteration()
+        if self.returned:
+            self.returned = False
+            raise StopIteration()
+        if expr.is_return():
+            self.returned = True
         return expr
 
     def __str__(self):
@@ -49,13 +64,13 @@ class Disassembler(object):
         return Expression(self.level, func, *args)
 
     def noop(self):
-        return NoopExpression()
+        return NoopExpression(self.level)
 
     def end(self):
-        return ReturnExpression
+        return ReturnExpression(self.level)
 
-    def parse_one(self):
+    def parse_next(self):
         data = self.read_value(4)
         if not data:
-            return
-        return self.unknown(data)
+            return [self.end()]
+        return [self.unknown(data)]

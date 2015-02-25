@@ -11,8 +11,11 @@ class Expression(object):
             func=self.func,
             args=', '.join(str(arg) for arg in self.args))
 
+    def is_return(self):
+        return False
 
-class UnknownExpression(object):
+
+class UnknownExpression(Expression):
     def __init__(self, level, value):
         self.level = level
         self.value = value
@@ -23,15 +26,21 @@ class UnknownExpression(object):
             value=self.value)
 
 
-class NoopExpression(object):
+class NoopExpression(Expression):
+    def __init__(self, level=0):
+        pass
+
     def __str__(self):
         return ''
 
 
-class ReturnExpression(object):
+class ReturnExpression(Expression):
     def __init__(self, level):
         self.level = level
 
     def __str__(self):
         return '{space}return'.format(
             space='    '*self.level)
+
+    def is_return(self):
+        return True
