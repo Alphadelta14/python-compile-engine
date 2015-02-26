@@ -44,3 +44,25 @@ class ReturnExpression(Expression):
 
     def is_return(self):
         return True
+
+
+class AssignmentExpression(Expression):
+    def __init__(self, level, dest, expression):
+        self.level = level
+        self.dest = dest
+        self.expression = expression
+
+    def __str__(self):
+        return '{space}{dest} = {expression}'.format(
+            space='    '*self.level,
+            dest=self.dest,
+            expression=self.expression)
+
+
+class StatementExpression(Expression):
+    def __init__(self, operator, *args):
+        self.operator = operator
+        self.args = args
+
+    def __str__(self):
+        return self.operator.join(map(str, self.args))

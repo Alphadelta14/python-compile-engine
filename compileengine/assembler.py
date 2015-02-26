@@ -1,6 +1,6 @@
 
 from expression import Expression, UnknownExpression, NoopExpression, \
-    ReturnExpression
+    ReturnExpression, AssignmentExpression, StatementExpression
 
 
 class Disassembler(object):
@@ -68,6 +68,12 @@ class Disassembler(object):
 
     def end(self):
         return ReturnExpression(self.level)
+
+    def assign(self, dest, statement):
+        return AssignmentExpression(self.level, dest, statement)
+
+    def statement(self, operator, *args):
+        return StatementExpression(operator, *args)
 
     def parse_next(self):
         data = self.read_value(4)
