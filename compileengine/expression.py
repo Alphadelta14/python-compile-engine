@@ -16,14 +16,16 @@ class Expression(object):
 
 
 class UnknownExpression(Expression):
-    def __init__(self, level, value):
+    def __init__(self, level, value, width=2):
         self.level = level
         self.value = value
+        self.width = width
 
     def __str__(self):
-        return '{space}eval(engine.unknown({value:#x}))'.format(
+        return '{space}eval(engine.unknown({value:#x}, {width}))'.format(
             space='    '*self.level,
-            value=self.value)
+            value=self.value,
+            width=self.width)
 
 
 class NoopExpression(Expression):

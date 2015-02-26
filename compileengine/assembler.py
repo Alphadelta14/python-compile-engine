@@ -57,17 +57,21 @@ class Disassembler(object):
         self.reset()
         return '\n'.join(str(line) for line in self)
 
-    def unknown(self, value):
-        return UnknownExpression(self.level, value)
+    def unknown(self, value, width=2):
+        return UnknownExpression(self.level, value, width)
 
-    def build(self, func, *args):
-        return Expression(self.level, func, *args)
+    def build(self, func, *args, **kwargs):
+        level = kwargs.get('level', self.level)
+        return Expression(level, func, *args)
 
     def noop(self):
         return NoopExpression(self.level)
 
     def end(self):
         return ReturnExpression(self.level)
+
+    def add(self, *args):
+        return self.statement('+', *args)
 
     def assign(self, dest, statement):
         return AssignmentExpression(self.level, dest, statement)
