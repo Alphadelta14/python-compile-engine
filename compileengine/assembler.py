@@ -55,7 +55,12 @@ class Disassembler(object):
 
     def __str__(self):
         self.reset()
-        return '\n'.join(str(line) for line in self)
+        return '\n'.join(str(line) for line in self.parse_all())
+
+    def parse_all(self):
+        self.reset()
+        parsed = [expr for expr in self]
+        return self.simplify(parsed)
 
     def unknown(self, value, width=2):
         return UnknownExpression(self.level, value, width)
@@ -84,3 +89,6 @@ class Disassembler(object):
         if not data:
             return [self.end()]
         return [self.unknown(data)]
+
+    def simplify(self, parsed):
+        return parsed
