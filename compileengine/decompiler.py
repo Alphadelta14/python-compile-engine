@@ -3,7 +3,7 @@ from expression import Expression, UnknownExpression, NoopExpression, \
     ReturnExpression, AssignmentExpression, StatementExpression
 
 
-class Disassembler(object):
+class Decompiler(object):
     def __init__(self, handle, level=0):
         self.level = level
         self.handle = handle
