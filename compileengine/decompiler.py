@@ -1,19 +1,15 @@
 
-from expression import Expression, UnknownExpression, NoopExpression, \
-    ReturnExpression, AssignmentExpression, StatementExpression
+from expression import ExpressionBlock
 
 
-class Decompiler(object):
+class Decompiler(ExpressionBlock):
     def __init__(self, handle, level=0):
-        self.level = level
+        ExpressionBlock.__init__(level)
         self.handle = handle
         self.start = handle.tell()
-        self.returned = False  # for next()
-        self._parsed_queue = []
 
     def reset(self):
         self.handle.seek(self.start)
-        self.returned = False
 
     def read(self, size=None):
         return self.handle.read(size)
@@ -32,63 +28,19 @@ class Decompiler(object):
     def seek(self, ofs, whence=0):
         return self.handle.seek(ofs, whence)
 
-    def __iter__(self):
-        return self
-
-    def next(self):
-        try:
-            expr = self._parsed_queue.pop(0)
-        except:
-            self._parsed_queue = self.parse_next()
-            if not self._parsed_queue:
-                expr = None
-            else:
-                expr = self._parsed_queue.pop(0)
-        if not expr:
-            raise StopIteration()
-        if self.returned:
-            self.returned = False
-            raise StopIteration()
-        if expr.is_return():
-            self.returned = True
-        return expr
-
-    def __str__(self):
-        self.reset()
-        return '\n'.join(str(line) for line in self.parse_all())
-
-    def parse_all(self):
-        self.reset()
-        parsed = [expr for expr in self]
-        return self.simplify(parsed)
-
-    def unknown(self, value, width=2):
-        return UnknownExpression(self.level, value, width)
-
-    def build(self, func, *args, **kwargs):
-        level = kwargs.get('level', self.level)
-        return Expression(level, func, *args)
-
-    def noop(self):
-        return NoopExpression(self.level)
-
-    def end(self):
-        return ReturnExpression(self.level)
-
-    def add(self, *args):
-        return self.statement('+', *args)
-
-    def assign(self, dest, statement):
-        return AssignmentExpression(self.level, dest, statement)
-
-    def statement(self, operator, *args):
-        return StatementExpression(operator, *args)
+    def parse(self):
+        while True:
+            self.lines += self.parse_next()
+            if self.lines and self.lines[-1].is_return():
+                break
+        self.lines = self.simplify(self.lines)
+        return self.lines
 
     def parse_next(self):
         data = self.read_value(4)
         if not data:
             return [self.end()]
-        return [self.unknown(data)]
+        return [self.unknown(data, 4)]
 
     def simplify(self, parsed):
         return parsed
