@@ -92,3 +92,37 @@ class StatementExpression(Expression):
 
     def __str__(self):
         return self.operator.join(map(str, self.args))
+
+
+class ExpressionBlock(Expression):
+    def __init__(self, level=0):
+        self.level = level
+        self.lines = []
+
+    def __iter__(self):
+        return ExpressionBlockIterator(self)
+
+    def __str__(self):
+        return '\n'.join(str(line) for line in self)
+
+    def unknown(self, value, width=2):
+        return UnknownExpression(self.level, value, width)
+
+    def build(self, func, *args, **kwargs):
+        level = kwargs.get('level', self.level)
+        return Expression(level, func, *args)
+
+    def noop(self):
+        return NoopExpression(self.level)
+
+    def end(self):
+        return ReturnExpression(self.level)
+
+    def add(self, *args):
+        return self.statement('+', *args)
+
+    def assign(self, dest, statement):
+        return AssignmentExpression(self.level, dest, statement)
+
+    def statement(self, operator, *args):
+        return StatementExpression(operator, *args)
