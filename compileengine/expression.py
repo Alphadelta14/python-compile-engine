@@ -1,10 +1,39 @@
 
 
 class ExpressionBlockIterator(object):
+    """Iterator over an Expression Block. Each iteration returns the next
+    expression at the appropriate level.
+
+    This is automatically returned when iterating an ExpressionBlock.
+
+    Example
+    -------
+    >>> block = ExpressionBlock()
+    >>> block2 = ExpressionBlock(1)
+    >>> block.lines = [block.func('my_func', 1, 2),
+    ... block.func('my_func', 3, 4),
+    ... block.noop(),
+    ... block2,
+    ... block.end()]
+    >>> block2.lines = [
+    ... block2.noop()
+    ... block2.func('my_func, 2, 3)
+    ... block2.end()]
+    >>> for expr in block:
+    ... print(expr)
+    engine.my_func(1, 2)
+    engine.my_func(3, 4)
+        engine.my_func(2, 3)
+    return
+    """
     def __init__(self, block):
         self.stack = [[block, 0]]
 
     def next(self):
+        """Return the next expression from the current block. If there are
+        no more lines in the current block, visit the parent item on the
+        stack. If there are no more items in the stack, end the loop.
+        """
         while self.stack:
             block, lineno = self.stack[-1]
             while lineno < block.lines:
@@ -21,6 +50,29 @@ class ExpressionBlockIterator(object):
 
 
 class Expression(object):
+    """Base Expression representing a function. This can be subclassed
+    for different functionality.
+
+    To get the textual representation, use `str(expr)`.
+
+    Attributes
+    ----------
+    level : int
+        How deep this expression is. This determines how many spaces go before
+        it on a line.
+    name : str
+        Name of the function being called. This should be a method belonging to
+        the active Engine.
+    *args : list of args
+        Arguments passed to the function
+
+    Example
+    -------
+    >>> print(str(Expression(2, 'my_func', 1, 2)))
+            engine.my_func(1, 2)
+    >>> print(str(Expression(0, 'my_func2')))
+    engine.my_func2()
+    """
     def __init__(self, level, name, *args):
         self.level = level
         self.name = name
@@ -40,6 +92,17 @@ class Expression(object):
 
 
 class UnknownExpression(Expression):
+    """An unknown expression. The value passed in here will be written back
+    raw.
+
+    Attributes
+    ----------
+    value : int
+        Raw value
+    width : int
+        Number of bytes this should be padded to.
+
+    """
     def __init__(self, level, value, width=2):
         self.level = level
         self.value = value
@@ -53,14 +116,24 @@ class UnknownExpression(Expression):
 
 
 class NoopExpression(Expression):
+    """An empty expression.
+    """
     def __init__(self, level=0):
-        pass
+        self.level = level
 
     def __str__(self):
         return ''
 
+    def __bool__(self):
+        return False
+    __nonzero__ = __bool__
+
 
 class ReturnExpression(Expression):
+    """A return expression.
+
+    This is the last expression of a block.
+    """
     def __init__(self, level):
         self.level = level
 
@@ -73,6 +146,23 @@ class ReturnExpression(Expression):
 
 
 class AssignmentExpression(Expression):
+    """An assigment expression
+
+    This indicates that a left-value should be assigned the result of an
+    expression or other right-value.
+
+    Attributes
+    ----------
+    dest : string
+        Destination left-value
+    expression : Expression or mixed
+        Value or expression to be assigned to `dest`.
+
+    Example
+    -------
+    >>> print(AssignmentExpression(0, 'engine.vars.b', 42))
+    engine.vars.b = 42
+    """
     def __init__(self, level, dest, expression):
         self.level = level
         self.dest = dest
@@ -86,6 +176,15 @@ class AssignmentExpression(Expression):
 
 
 class StatementExpression(Expression):
+    """Statement expression for applying an operator to arguments
+
+    Attributes
+    ----------
+    operator : str
+        Operator to apply to `args`
+    *args : list
+        Target list of arguments
+    """
     def __init__(self, operator, *args):
         self.operator = operator
         self.args = args
@@ -95,9 +194,19 @@ class StatementExpression(Expression):
 
 
 class ExpressionBlock(Expression):
+    """Block of expressions. This contains a list of expressions
+
+    Attributes
+    ----------
+    lines : list
+        List of expressions
+    """
     def __init__(self, level=0):
         self.level = level
         self.lines = []
+
+    def is_block(self):
+        return True
 
     def __iter__(self):
         return ExpressionBlockIterator(self)
