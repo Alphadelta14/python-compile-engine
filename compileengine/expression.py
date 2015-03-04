@@ -1,4 +1,25 @@
 
+
+class ExpressionBlockIterator(object):
+    def __init__(self, block):
+        self.stack = [[block, 0]]
+
+    def next(self):
+        while self.stack:
+            block, lineno = self.stack[-1]
+            while lineno < block.lines:
+                expr = block.lines[lineno]
+                lineno += 1
+                self.stack[-1][1] = lineno
+                if expr.is_block():
+                    self.stack.append([expr, 0])
+                    return self.next()
+                if expr:
+                    return expr
+            self.stack.pop()
+        raise StopIteration()
+
+
 class Expression(object):
     def __init__(self, level, func, *args):
         self.level = level
@@ -12,6 +33,9 @@ class Expression(object):
             args=', '.join(str(arg) for arg in self.args))
 
     def is_return(self):
+        return False
+
+    def is_block(self):
         return False
 
 
