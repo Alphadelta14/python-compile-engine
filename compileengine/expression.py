@@ -21,15 +21,15 @@ class ExpressionBlockIterator(object):
 
 
 class Expression(object):
-    def __init__(self, level, func, *args):
+    def __init__(self, level, name, *args):
         self.level = level
-        self.func = func
+        self.name = name
         self.args = args
 
     def __str__(self):
         return '{space}engine.{func}({args})'.format(
             space='    '*self.level,
-            func=self.func,
+            func=self.name,
             args=', '.join(str(arg) for arg in self.args))
 
     def is_return(self):
@@ -108,9 +108,9 @@ class ExpressionBlock(Expression):
     def unknown(self, value, width=2):
         return UnknownExpression(self.level, value, width)
 
-    def build(self, func, *args, **kwargs):
+    def func(self, name, *args, **kwargs):
         level = kwargs.get('level', self.level)
-        return Expression(level, func, *args)
+        return Expression(level, name, *args)
 
     def noop(self):
         return NoopExpression(self.level)
