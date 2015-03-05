@@ -36,8 +36,11 @@ class ExpressionBlockIterator(object):
         """
         while self.stack:
             block, lineno = self.stack[-1]
-            while lineno < block.lines:
-                expr = block.lines[lineno]
+            while True:
+                try:
+                    expr = block.lines[lineno]
+                except IndexError:
+                    break
                 lineno += 1
                 self.stack[-1][1] = lineno
                 if expr.is_block():
