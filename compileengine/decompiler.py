@@ -3,6 +3,24 @@ from expression import ExpressionBlock
 
 
 class Decompiler(ExpressionBlock):
+    """Base Decompiler class for building expression blocks from a stream
+
+    Attributes
+    ----------
+    handle : readable
+        File handle to read from. This should be seeked to the start of
+        the expression.
+
+    Methods
+    -------
+    parse : ()
+        Parse and store this expression
+
+    See Also
+    --------
+    compileengine.expression.ExpressionBlock
+    compileengine.expression.ExpressionIterator
+    """
     def __init__(self, handle, level=0):
         ExpressionBlock.__init__(level)
         self.handle = handle
@@ -12,9 +30,20 @@ class Decompiler(ExpressionBlock):
         self.handle.seek(self.start)
 
     def read(self, size=None):
+        """Read from the handle
+        """
         return self.handle.read(size)
 
     def read_value(self, size=None):
+        """Read a value from the handle as an int based on `size`.
+
+        This will return a UInt32 if 4 bytes are read, for example.
+
+        Parameters
+        ----------
+        size : int
+            Width in bytes of the returned datatype
+        """
         value = 0
         shift = 0
         for char in self.read(size):
@@ -23,12 +52,18 @@ class Decompiler(ExpressionBlock):
         return value
 
     def tell(self):
+        """Get position of handle
+        """
         return self.handle.tell()
 
     def seek(self, ofs, whence=0):
+        """Seek handle
+        """
         return self.handle.seek(ofs, whence)
 
     def parse(self):
+        """Parse and store this expression as a whole
+        """
         while True:
             self.lines += self.parse_next()
             if self.lines and self.lines[-1].is_return():
@@ -37,10 +72,30 @@ class Decompiler(ExpressionBlock):
         return self.lines
 
     def parse_next(self):
+        """Parse the next set of values. This should be overridden in
+        derived classes.
+
+        Returns
+        -------
+        lines : list
+            List of expressions to add to the block
+        """
         data = self.read_value(4)
         if not data:
             return [self.end()]
         return [self.unknown(data, 4)]
 
     def simplify(self, parsed):
+        """Simplify the parsed expression. This is called after processing.
+
+        Parameters
+        ----------
+        parsed : list
+            List of expressions
+
+        Returns
+        -------
+        parsed : list
+            Simplified list of expressions
+        """
         return parsed
