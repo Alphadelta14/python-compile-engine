@@ -21,7 +21,7 @@ def name_generator(prefix='local_'):
 class Variable(object):
     def __init__(self, base=None, value=None):
         self.value = value
-        self.name = 'default'
+        self.name = 'default_{0:x}'.format(id(self))
         self.refcount = 0
         self.refby = []
 
@@ -61,7 +61,7 @@ class Variable(object):
         if isinstance(other, Variable):
             other.refcount += 1
             other.refby.append(new_var)
-        new_var.value = [oper, self.value, other]
+        new_var.value = (oper, self.value, other)
         return new_var
 
     def __add__(self, other):
