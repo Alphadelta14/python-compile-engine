@@ -2,6 +2,11 @@
 import string
 import operator
 
+OP_PRECEDENCE = [
+    (operator.mul, ),
+    (operator.add, operator.sub)
+]
+
 
 def name_generator(prefix='local_'):
     idx = 0
@@ -14,12 +19,65 @@ def name_generator(prefix='local_'):
 
 
 class Variable(object):
-    def __init__(self, base=None):
-        self.value = None
+    def __init__(self, base=None, value=None):
+        self.value = value
         self.name = 'default'
+        self.refcount = 0
+        self.refby = []
 
     def has_value(self):
         return self.value is not None
 
     def __str__(self):
         return 'engine.vars.{name}'.format(name=self.name)
+
+    """def __add__(self, other):
+        self.refcount += 1
+        if isinstance(other, Variable):
+            other.refcount += 1
+        else:
+            try:
+                oper, operand1, operand2 = self.value
+                if oper == operator.add:
+                    try:
+                        new_operand2 = operand2+other
+                        if not isinstance(new_operand2, Variable):
+                            return Variable(value=[operator.add, operand1, new_operand2])
+                    except:
+                        pass
+                    try:
+                        new_operand1 = operand1+other
+                        if not isinstance(new_operand1, Variable):
+                            return Variable(value=[operator.add, new_operand1, operand2])
+                    except:
+                        pass
+            except:
+                return Variable(value=[operator.add, self, other])"""
+
+    def operate(self, oper, other):
+        self.refcount += 1
+        new_var = Variable()
+        self.refby.append(new_var)
+        if isinstance(other, Variable):
+            other.refcount += 1
+            other.refby.append(new_var)
+        new_var.value = [oper, self.value, other]
+        return new_var
+
+    def __add__(self, other):
+        return self.operate(operator.add, other)
+
+    def __sub__(self, other):
+        return self.operate(operator.sub, other)
+
+    def __mul__(self, other):
+        return self.operate(operator.mul, other)
+
+    def __neg__(self):
+        return self.operate(operator.mul, -1)
+
+    def __lshift__(self, other):
+        return self.operate(operator.lshift, other)
+
+    def __rshift__(self, other):
+        return self.operate(operator.rshift, other)
