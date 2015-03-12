@@ -22,7 +22,7 @@ class Decompiler(ExpressionBlock):
     compileengine.expression.ExpressionIterator
     """
     def __init__(self, handle, level=0):
-        ExpressionBlock.__init__(level)
+        ExpressionBlock.__init__(self, level)
         self.handle = handle
         self.start = handle.tell()
 
