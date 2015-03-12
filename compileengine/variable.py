@@ -78,6 +78,6 @@ class Variable(object):
         while True:
             # TODO: optimize (full recalculation not needed in loop)
             name = ''.join([string.ascii_lowercase[int(c, 10)]
-                            for c in oct(idx)[1:]])
+                            for c in '{0:o}'.format(idx)])
             yield prefix+name
             idx += 1
