@@ -9,7 +9,7 @@ OP_PRECEDENCE = [
 
 
 class Variable(object):
-    def __init__(self, base=None, value=None):
+    def __init__(self, value=None):
         self.value = value
         self.name = 'default_{0:x}'.format(id(self))
         self.refcount = 0
@@ -19,6 +19,9 @@ class Variable(object):
         return self.value is not None
 
     def __str__(self):
+        # if self.refcount < 2:
+        #     return str(self.value)
+        # return self.name
         return 'engine.vars.{name}'.format(name=self.name)
 
     """def __add__(self, other):

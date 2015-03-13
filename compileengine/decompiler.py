@@ -61,9 +61,13 @@ class Decompiler(ExpressionBlock):
         """
         return self.handle.seek(ofs, whence)
 
+    def prepare(self):
+        return []
+
     def parse(self):
         """Parse and store this expression as a whole
         """
+        self.prepare()
         while True:
             self.lines += self.parse_next()
             if self.lines and self.lines[-1].is_return():

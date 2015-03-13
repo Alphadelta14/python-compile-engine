@@ -137,12 +137,14 @@ class ReturnExpression(Expression):
 
     This is the last expression of a block.
     """
-    def __init__(self, level):
+    def __init__(self, level, *args):
         self.level = level
+        self.args = args
 
     def __str__(self):
-        return '{space}return'.format(
-            space='    '*self.level)
+        return '{space}return {args}'.format(
+            space='    '*self.level,
+            args=', '.join(str(arg) for arg in self.args))
 
     def is_return(self):
         return True
@@ -227,8 +229,8 @@ class ExpressionBlock(Expression):
     def noop(self):
         return NoopExpression(self.level)
 
-    def end(self):
-        return ReturnExpression(self.level)
+    def end(self, *args):
+        return ReturnExpression(self.level, *args)
 
     def add(self, *args):
         return self.statement('+', *args)
