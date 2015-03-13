@@ -9,7 +9,8 @@ OP_PRECEDENCE = [
 
 
 class Variable(object):
-    def __init__(self, value=None):
+    def __init__(self, base=None, value=None):
+        self.base = base
         self.value = value
         self.name = 'default_{0:x}'.format(id(self))
         self.refcount = 0
