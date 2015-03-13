@@ -12,7 +12,7 @@ class Variable(object):
     def __init__(self, base=None, value=None):
         self.base = base
         self.value = value
-        self.name = 'default_{0:x}'.format(id(self))
+        self.name = None
         self.refcount = 0
         self.refby = []
 
@@ -20,8 +20,13 @@ class Variable(object):
         return self.value is not None
 
     def __str__(self):
-        # if self.refcount < 2:
-        #     return str(self.value)
+        if self.refcount < 2:
+            # TODO: complex stringification
+            return str(self.value)
+        if self.name is None:
+            name = 'default_{0:x}'.format(id(self))
+        else:
+            name = self.name
         # return self.name
         return 'engine.vars.{name}'.format(name=self.name)
 

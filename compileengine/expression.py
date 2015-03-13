@@ -236,6 +236,10 @@ class ExpressionBlock(Expression):
         return self.statement('+', *args)
 
     def assign(self, dest, statement):
+        try:
+            dest.value = statement
+        except:
+            pass
         return AssignmentExpression(self.level, dest, statement)
 
     def statement(self, operator, *args):
