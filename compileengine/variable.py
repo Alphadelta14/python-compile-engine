@@ -58,21 +58,31 @@ class Variable(object):
         return new_var
 
     def __add__(self, other):
+        if other is 0:
+            return self
         return self.operate(operator.add, other)
 
     def __sub__(self, other):
+        if other is 0:
+            return self
         return self.operate(operator.sub, other)
 
     def __mul__(self, other):
+        if other is 1:
+            return self
         return self.operate(operator.mul, other)
 
     def __neg__(self):
         return self.operate(operator.mul, -1)
 
     def __lshift__(self, other):
+        if other is 0:
+            return self
         return self.operate(operator.lshift, other)
 
     def __rshift__(self, other):
+        if other is 0:
+            return self
         return self.operate(operator.rshift, other)
 
     @staticmethod
