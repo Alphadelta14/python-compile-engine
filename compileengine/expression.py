@@ -174,9 +174,13 @@ class AssignmentExpression(Expression):
         self.expression = expression
 
     def __str__(self):
+        try:
+            dest = ', '.join(str(d.name) for d in self.dest)
+        except:
+            dest = self.dest.get_name()
         return '{space}{dest} = {expression}'.format(
             space='    '*self.level,
-            dest=self.dest,
+            dest=dest,
             expression=self.expression)
 
 
@@ -235,9 +239,10 @@ class ExpressionBlock(Expression):
     def add(self, *args):
         return self.statement('+', *args)
 
-    def assign(self, dest, statement):
+    def assign(self, dest, statement, assign_var=True):
         try:
-            dest.value = statement
+            if assign_var:
+                dest.value = statement
         except:
             pass
         return AssignmentExpression(self.level, dest, statement)

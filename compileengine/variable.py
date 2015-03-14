@@ -14,21 +14,24 @@ class Variable(object):
         self.value = value
         self.name = None
         self.refcount = 0
+        self.persist = False
         self.refby = []
 
     def has_value(self):
         return self.value is not None
 
     def __str__(self):
-        if self.refcount < 2:
+        if not self.persist and self.refcount < 2:
             # TODO: complex stringification
             return str(self.value)
+        return self.get_name()
+
+    def get_name(self):
         if self.name is None:
             name = 'default_{0:x}'.format(id(self))
         else:
             name = self.name
-        # return self.name
-        return 'engine.vars.{name}'.format(name=self.name)
+        return 'engine.vars.{name}'.format(name=name)
 
     """def __add__(self, other):
         self.refcount += 1
