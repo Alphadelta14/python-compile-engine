@@ -249,3 +249,19 @@ class ExpressionBlock(Expression):
 
     def statement(self, operator, *args):
         return StatementExpression(operator, *args)
+
+
+class ConditionalExpression(Expression):
+    """
+    Parameters
+    ----------
+    conditional : Statement or Expression
+    """
+    def __init__(self, level=0):
+        self.level = level
+        self.conditional = True
+
+    def __str__(self):
+        return '{space}if engine.branch({conditional}):'.format(
+            space='    '*self.level,
+            conditional=str(self.conditional))
