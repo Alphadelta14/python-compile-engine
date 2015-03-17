@@ -202,6 +202,26 @@ class StatementExpression(Expression):
         return self.operator.join(map(str, self.args))
 
 
+class ConditionalExpression(Expression):
+    """
+    Attributes
+    ----------
+    conditional : Statement or Expression
+
+    Notes
+    -----
+    Values such as None, False, and True are valid conditional expressions
+    """
+    def __init__(self, level=0, conditional=None):
+        self.level = level
+        self.conditional = conditional
+
+    def __str__(self):
+        return '{space}if engine.branch({conditional}):'.format(
+            space='    '*self.level,
+            conditional=str(self.conditional))
+
+
 class ExpressionBlock(Expression):
     """Block of expressions. This contains a list of expressions
 
@@ -247,21 +267,8 @@ class ExpressionBlock(Expression):
             pass
         return AssignmentExpression(self.level, dest, statement)
 
+    def condition(self, statement):
+        return ConditionalExpression(self.level, statement)
+
     def statement(self, operator, *args):
         return StatementExpression(operator, *args)
-
-
-class ConditionalExpression(Expression):
-    """
-    Parameters
-    ----------
-    conditional : Statement or Expression
-    """
-    def __init__(self, level=0):
-        self.level = level
-        self.conditional = True
-
-    def __str__(self):
-        return '{space}if engine.branch({conditional}):'.format(
-            space='    '*self.level,
-            conditional=str(self.conditional))
