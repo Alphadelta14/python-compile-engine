@@ -33,6 +33,10 @@ class Variable(object):
             name = self.name
         return 'engine.vars.{name}'.format(name=name)
 
+    def __repr__(self):
+        return '<{cls} ({name}) at {id:#x}>'.format(
+            cls=self.__class__.__name__, name=self.get_name(), id=id(self))
+
     """def __add__(self, other):
         self.refcount += 1
         if isinstance(other, Variable):
