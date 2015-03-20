@@ -10,6 +10,10 @@ class Decompiler(ExpressionBlock):
     handle : readable
         File handle to read from. This should be seeked to the start of
         the expression.
+    start : int
+        Location parsing begins. Defaults to handle.tell()
+    stop : int or None
+        If specified, parsing will forcibly stop once this byte is reached
 
     Methods
     -------
@@ -25,6 +29,7 @@ class Decompiler(ExpressionBlock):
         ExpressionBlock.__init__(self, level)
         self.handle = handle
         self.start = handle.tell()
+        self.stop = None
 
     def reset(self):
         self.handle.seek(self.start)
@@ -69,6 +74,8 @@ class Decompiler(ExpressionBlock):
         """
         self.prepare()
         while True:
+            if self.stop is not None and self.tell() >= self.stop:
+                break
             self.lines += self.parse_next()
             if self.lines and self.lines[-1].is_return():
                 break
