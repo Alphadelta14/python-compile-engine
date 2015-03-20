@@ -13,6 +13,7 @@ class Variable(object):
         self.base = base
         self.value = value
         self.name = None
+        self.fallback_name = 'default_{0:x}'.format(id(self))
         self.refcount = 0
         self.persist = False
         self.refby = []
@@ -28,7 +29,7 @@ class Variable(object):
 
     def get_name(self):
         if self.name is None:
-            name = 'default_{0:x}'.format(id(self))
+            name = self.fallback_name
         else:
             name = self.name
         return 'engine.vars.{name}'.format(name=name)
