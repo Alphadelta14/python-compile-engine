@@ -175,7 +175,7 @@ class AssignmentExpression(Expression):
 
     def __str__(self):
         try:
-            dest = ', '.join(str(d.name) for d in self.dest)
+            dest = ', '.join(str(d.get_name()) for d in self.dest)
         except:
             dest = self.dest.get_name()
         return '{space}{dest} = {expression}'.format(
