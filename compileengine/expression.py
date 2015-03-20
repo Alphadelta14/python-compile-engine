@@ -207,17 +207,28 @@ class ConditionalExpression(Expression):
     Attributes
     ----------
     conditional : Statement or Expression
+    loop_type : (TYPE_IF, TYPE_WHILE)
+        Specifies type of condition. Defaults to TYPE_IF (no loop)
 
     Notes
     -----
     Values such as None, False, and True are valid conditional expressions
     """
-    def __init__(self, level=0, conditional=None):
+    TYPE_IF = 0
+    TYPE_WHILE = 1
+
+    def __init__(self, level=0, conditional=None, loop_type=0):
         self.level = level
         self.conditional = conditional
+        self.loop_type = loop_type
 
     def __str__(self):
-        return '{space}if engine.branch({conditional}):'.format(
+        if self.loop_type == self.TYPE_IF:
+            prefix = 'if'
+        elif self.loop_type == self.TYPE_WHILE:
+            prefix = 'while'
+        return '{space}{prefix} engine.branch({conditional}):'.format(
+            prefix=prefix,
             space='    '*self.level,
             conditional=str(self.conditional))
 
@@ -269,6 +280,10 @@ class ExpressionBlock(Expression):
 
     def condition(self, statement):
         return ConditionalExpression(self.level, statement)
+
+    def while_loop(self, statement):
+        return ConditionalExpression(self.level, statement,
+                                     ConditionalExpression.TYPE_WHILE)
 
     def statement(self, operator, *args):
         return StatementExpression(operator, *args)
