@@ -43,9 +43,12 @@ class ExpressionBlockIterator(object):
                     break
                 lineno += 1
                 self.stack[-1][1] = lineno
-                if expr.is_block():
-                    self.stack.append([expr, 0])
-                    return self.next()
+                try:
+                    if expr.is_block():
+                        self.stack.append([expr, 0])
+                        return self.next()
+                except:
+                    pass
                 if expr:
                     return expr
             self.stack.pop()

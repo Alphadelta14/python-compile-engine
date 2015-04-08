@@ -16,6 +16,7 @@ class Variable(object):
         self.fallback_name = 'default_{0:x}'.format(id(self))
         self.refcount = 0
         self.persist = False
+        self.const = True
         self.refby = []
 
     def has_value(self):
