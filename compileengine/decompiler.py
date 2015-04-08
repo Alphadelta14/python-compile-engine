@@ -51,9 +51,12 @@ class Decompiler(ExpressionBlock):
         """
         value = 0
         shift = 0
+        char = None
         for char in self.read(size):
             value += ord(char) << shift
             shift += 8
+        if char is None:
+            return None
         return value
 
     def tell(self):
