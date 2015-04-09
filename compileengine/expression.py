@@ -79,14 +79,16 @@ class Expression(object):
     >>> print(str(Expression(0, 'my_func2')))
     engine.my_func2()
     """
-    def __init__(self, level, name, *args):
+    def __init__(self, level, name, *args, **kwargs):
         self.level = level
         self.name = name
         self.args = args
+        self.namespace = kwargs.get('namespace', 'engine.')
 
     def __str__(self):
-        return '{space}engine.{func}({args})'.format(
+        return '{space}{namespace}{func}({args})'.format(
             space='    '*self.level,
+            namespace=self.namespace,
             func=self.name,
             args=', '.join(str(arg) for arg in self.args))
 
@@ -205,6 +207,32 @@ class StatementExpression(Expression):
         return self.operator.join(map(str, self.args))
 
 
+class ContextExpression(Expression):
+    """Creates a context manager and potentially assigns it
+
+    Attributes
+    ----------
+    expression : Expression or mixed
+        Value or expression to be assigned to `dest`.
+    dest : string
+        Destination right value. Optional.
+    """
+    def __init__(self, level, expression, dest=None):
+        self.level = level
+        self.expression = expression
+        self.dest = dest
+
+    def __str__(self):
+        if self.dest is None:
+            dest = ''
+        else:
+            dest = ' as {dest}'.format(dest=self.dest)
+        return '{space}with {expression}{dest}:'.format(
+            space='    '*self.level,
+            expression=self.expression,
+            dest=dest)
+
+
 class ConditionalExpression(Expression):
     """
     Attributes
@@ -261,8 +289,8 @@ class ExpressionBlock(Expression):
         return UnknownExpression(self.level, value, width)
 
     def func(self, name, *args, **kwargs):
-        level = kwargs.get('level', self.level)
-        return Expression(level, name, *args)
+        level = kwargs.pop('level', self.level)
+        return Expression(level, name, *args, **kwargs)
 
     def noop(self):
         return NoopExpression(self.level)
@@ -280,6 +308,9 @@ class ExpressionBlock(Expression):
         except:
             pass
         return AssignmentExpression(self.level, dest, statement)
+
+    def context(self, expression, dest=None):
+        return ContextExpression(self.level, expression, dest)
 
     def condition(self, statement):
         return ConditionalExpression(self.level, statement)
