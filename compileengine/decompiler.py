@@ -33,6 +33,7 @@ class Decompiler(ExpressionBlock):
 
     def reset(self):
         self.handle.seek(self.start)
+        self.lines = []
 
     def read(self, size=None):
         """Read from the handle
