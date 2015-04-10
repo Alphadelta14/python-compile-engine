@@ -290,6 +290,7 @@ class ExpressionBlock(Expression):
 
     def func(self, name, *args, **kwargs):
         level = kwargs.pop('level', self.level)
+        kwargs['namespace'] = kwargs.pop('namespace', 'engine.funcs.')
         return Expression(level, name, *args, **kwargs)
 
     def noop(self):
