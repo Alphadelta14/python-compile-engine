@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='compile-engine',
-      version='2.1',
+      version='4.1',
       description='Python Compile Engine',
       url='http://github.com/Alphadelta14/python-compile-engine',
       author='Alpha',
