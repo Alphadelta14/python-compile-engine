@@ -17,6 +17,7 @@ class VariableCollection(object):
     def _create(self, name):
         var = Variable()
         var.name = name
+        var.engine = self.engine
         return var
 
     def __getattr__(self, name):
@@ -32,9 +33,25 @@ class VariableCollection(object):
         var.value = value
 
 
+class Function(Variable):
+    """Function
+
+    This variable type is callable
+    """
+    def __call__(self, *args):
+        # self.engine.func(self, *args)
+        return
+
+
 class FunctionCollection(VariableCollection):
     def __setattr__(self, name, value):
         raise TypeError('Cannot set a function')
+
+    def _create(self, name):
+        var = Function()
+        var.name = name
+        var.engine = self.engine
+        return var
 
 
 class Engine(BytesIO):
