@@ -54,16 +54,24 @@ class FunctionCollection(VariableCollection):
         return var
 
 
+class NewBranch(Exception):
+    pass
+
+
 class Engine(BytesIO):
     """Execute a decompiled function with this object to compile it
     """
     variable_collection_class = VariableCollection
     function_collection_class = FunctionCollection
 
+    STATE_IDLE = 0
+    STATE_BUILDING_BRANCHES = 1
+
     def __init__(self):
         BytesIO.__init__(self)
         self.vars = self._init_vars()
         self.funcs = self._init_funcs()
+        self.state = self.STATE_IDLE
 
     def write_value(self, value, size=4):
         """Write a fixed length value to the buffer
@@ -88,3 +96,36 @@ class Engine(BytesIO):
 
     def _init_funcs(self):
         return FunctionCollection(self)
+
+    def compile(self, func):
+        self.find_branches(func)
+
+    def find_branches(self, func):
+        self.paths = [()]
+        self.loops = []
+        self.state = self.STATE_BUILDING_BRANCHES
+        self.path_id = 0
+        while self.path_id < len(self.paths):
+            self.current_path = self.paths[self.path_id]
+            while True:
+                self.branch_id = 0
+                try:
+                    func(self)
+                except NewBranch:
+                    pass
+                break
+            self.path_id += 1
+        self.state = self.STATE_IDLE
+
+    def branch(self, condition):
+        try:
+            value = self.current_path[self.branch_id]
+            self.branch_id += 1
+            return value
+        except IndexError:
+            self.paths.append(self.current_path+(True, ))
+            self.paths.append(self.current_path+(False, ))
+            raise NewBranch
+
+    def loop(self, condition):
+        return False
