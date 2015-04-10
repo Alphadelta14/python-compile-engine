@@ -14,12 +14,16 @@ class VariableCollection(object):
         self.engine = engine
         self._cache = {}
 
+    def _create(self, name):
+        var = Variable()
+        var.name = name
+        return var
+
     def __getattr__(self, name):
         try:
             return self._cache[name]
         except KeyError:
-            var = Variable()
-            var.name = name
+            var = self._create(name)
             self._cache[name] = var
             return var
 
