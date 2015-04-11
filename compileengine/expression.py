@@ -325,7 +325,7 @@ class ExpressionBlock(Expression):
         # return '\n'.join(str(line) for line in self)
 
     def unknown(self, value, width=2):
-        return UnknownExpression(self.indent, value, width)
+        return UnknownExpression(value, width)
 
     def func(self, name, *args, **kwargs):
         indent = kwargs.pop('indent', kwargs.pop('level', self.indent))
