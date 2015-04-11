@@ -103,8 +103,9 @@ class Expression(object):
 
 
 class WrapperExpression(Expression):
-    def __init__(self, expression):
+    def __init__(self, expression, **target_attrs):
         self.target = expression
+        self.target_attrs = target_attrs
 
     def is_return(self):
         return self.target.is_return()
@@ -121,6 +122,11 @@ class WrapperExpression(Expression):
 
     def __iter__(self):
         return iter(self.target)
+
+    def set_target(self, target):
+        self.target = target
+        for name, value in self.target_attrs.items():
+            setattr(self.target, name, value)
 
 
 class UnknownExpression(Expression):
@@ -356,5 +362,5 @@ class ExpressionBlock(Expression):
     def statement(self, operator, *args):
         return StatementExpression(operator, *args)
 
-    def wrapper(self, expression):
-        return WrapperExpression(expression)
+    def wrapper(self, expression, **target_attrs):
+        return WrapperExpression(expression, **target_attrs)
