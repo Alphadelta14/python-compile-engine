@@ -11,8 +11,8 @@ from compileengine.variable import Variable
 
 class VariableCollection(object):
     def __init__(self, engine):
-        self.engine = engine
-        self._cache = {}
+        object.__setattr__(self, '_cache', {})
+        object.__setattr__(self, 'engine', engine)
 
     def _create(self, name):
         var = Variable()
@@ -107,14 +107,13 @@ class Engine(BytesIO):
         self.path_id = 0
         while self.path_id < len(self.paths):
             self.current_path = self.paths[self.path_id]
-            while True:
-                self.branch_id = 0
-                try:
-                    func(self)
-                except NewBranch:
-                    pass
-                break
+            self.branch_id = 0
+            try:
+                func(self)
+            except NewBranch:
+                self.paths[self.path_id] = self.current_path+(NewBranch,)
             self.path_id += 1
+        self.paths = [path for path in self.paths if path[-1] != NewBranch]
         self.state = self.STATE_IDLE
 
     def branch(self, condition):
