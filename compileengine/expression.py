@@ -36,9 +36,10 @@ class ExpressionBlockIterator(object):
         """
         while self.stack:
             block, lineno = self.stack[-1]
+            lines = block.header_lines+block.lines+block.footer_lines
             while True:
                 try:
-                    expr = block.lines[lineno]
+                    expr = lines[lineno]
                 except IndexError:
                     break
                 lineno += 1
@@ -63,7 +64,7 @@ class Expression(object):
 
     Attributes
     ----------
-    level : int
+    indent : int
         How deep this expression is. This determines how many spaces go before
         it on a line.
     name : str
@@ -79,15 +80,17 @@ class Expression(object):
     >>> print(str(Expression(0, 'my_func2')))
     engine.my_func2()
     """
-    def __init__(self, level, name, *args, **kwargs):
-        self.level = level
+    indent = 0
+
+    def __init__(self, name, *args, **kwargs):
+        self.indent = kwargs.get('indent', 0)
         self.name = name
         self.args = args
         self.namespace = kwargs.get('namespace', 'engine.')
 
     def __str__(self):
         return '{space}{namespace}{func}({args})'.format(
-            space='    '*self.level,
+            space='    '*self.indent,
             namespace=self.namespace,
             func=self.name,
             args=', '.join(str(arg) for arg in self.args))
@@ -111,14 +114,13 @@ class UnknownExpression(Expression):
         Number of bytes this should be padded to.
 
     """
-    def __init__(self, level, value, width=2):
-        self.level = level
+    def __init__(self, value, width=2):
         self.value = value
         self.width = width
 
     def __str__(self):
         return '{space}eval(engine.unknown({value:#x}, {width}))'.format(
-            space='    '*self.level,
+            space='    '*self.indent,
             value=self.value,
             width=self.width)
 
@@ -126,9 +128,6 @@ class UnknownExpression(Expression):
 class NoopExpression(Expression):
     """An empty expression.
     """
-    def __init__(self, level=0):
-        self.level = level
-
     def __str__(self):
         return ''
 
@@ -142,13 +141,12 @@ class ReturnExpression(Expression):
 
     This is the last expression of a block.
     """
-    def __init__(self, level, *args):
-        self.level = level
+    def __init__(self, *args):
         self.args = args
 
     def __str__(self):
         return '{space}return {args}'.format(
-            space='    '*self.level,
+            space='    '*self.indent,
             args=', '.join(str(arg) for arg in self.args))
 
     def is_return(self):
@@ -173,8 +171,7 @@ class AssignmentExpression(Expression):
     >>> print(AssignmentExpression(0, 'engine.vars.b', 42))
     engine.vars.b = 42
     """
-    def __init__(self, level, dest, expression):
-        self.level = level
+    def __init__(self, dest, expression):
         self.dest = dest
         self.expression = expression
 
@@ -184,7 +181,7 @@ class AssignmentExpression(Expression):
         except:
             dest = self.dest.get_name()
         return '{space}{dest} = {expression}'.format(
-            space='    '*self.level,
+            space='    '*self.indent,
             dest=dest,
             expression=self.expression)
 
@@ -217,8 +214,7 @@ class ContextExpression(Expression):
     dest : string
         Destination right value. Optional.
     """
-    def __init__(self, level, expression, dest=None):
-        self.level = level
+    def __init__(self, expression, dest=None):
         self.expression = expression
         self.dest = dest
 
@@ -228,7 +224,7 @@ class ContextExpression(Expression):
         else:
             dest = ' as {dest}'.format(dest=self.dest)
         return '{space}with {expression}{dest}:'.format(
-            space='    '*self.level,
+            space='    '*self.indent,
             expression=self.expression,
             dest=dest)
 
@@ -248,8 +244,7 @@ class ConditionalExpression(Expression):
     TYPE_IF = 0
     TYPE_WHILE = 1
 
-    def __init__(self, level=0, conditional=None, loop_type=0):
-        self.level = level
+    def __init__(self, conditional=None, loop_type=0):
         self.conditional = conditional
         self.loop_type = loop_type
 
@@ -260,7 +255,7 @@ class ConditionalExpression(Expression):
             prefix = 'while'
         return '{space}{prefix} engine.branch({conditional}):'.format(
             prefix=prefix,
-            space='    '*self.level,
+            space='    '*self.indent,
             conditional=str(self.conditional))
 
 
@@ -270,11 +265,17 @@ class ExpressionBlock(Expression):
     Attributes
     ----------
     lines : list
-        List of expressions
+        List of expressions in block body
+    indent : int
+        Indentation of body
     """
-    def __init__(self, level=0):
-        self.level = level
+    def __init__(self, indent=1):
+        self.indent = indent
         self.lines = []
+        self.header_indent = indent-1
+        self.header_lines = []
+        self.footer_indent = indent-1
+        self.footer_lines = []
 
     def is_block(self):
         return True
@@ -283,21 +284,32 @@ class ExpressionBlock(Expression):
         return ExpressionBlockIterator(self)
 
     def __str__(self):
-        return '\n'.join(str(line) for line in self)
+        out = []
+        for indent, lines in ((self.header_indent, self.header_lines),
+                              (self.indent, self.lines),
+                              (self.footer_indent, self.footer_lines)):
+            for expr in lines:
+                for line in str(expr).split('\n'):
+                    out.append(
+                        '{space}{line}'.format(
+                            space='    '*indent,
+                            line=line))
+        return '\n'.join(out)
+        # return '\n'.join(str(line) for line in self)
 
     def unknown(self, value, width=2):
-        return UnknownExpression(self.level, value, width)
+        return UnknownExpression(self.indent, value, width)
 
     def func(self, name, *args, **kwargs):
-        level = kwargs.pop('level', self.level)
+        indent = kwargs.pop('indent', kwargs.pop('level', self.indent))
         kwargs['namespace'] = kwargs.pop('namespace', 'engine.funcs.')
-        return Expression(level, name, *args, **kwargs)
+        return Expression(name, *args, **kwargs)
 
     def noop(self):
-        return NoopExpression(self.level)
+        return NoopExpression()
 
     def end(self, *args):
-        return ReturnExpression(self.level, *args)
+        return ReturnExpression(*args)
 
     def add(self, *args):
         return self.statement('+', *args)
@@ -308,16 +320,16 @@ class ExpressionBlock(Expression):
                 dest.value = statement
         except:
             pass
-        return AssignmentExpression(self.level, dest, statement)
+        return AssignmentExpression(dest, statement)
 
     def context(self, expression, dest=None):
-        return ContextExpression(self.level, expression, dest)
+        return ContextExpression(expression, dest)
 
     def condition(self, statement):
-        return ConditionalExpression(self.level, statement)
+        return ConditionalExpression(statement)
 
     def while_loop(self, statement):
-        return ConditionalExpression(self.level, statement,
+        return ConditionalExpression(statement,
                                      ConditionalExpression.TYPE_WHILE)
 
     def statement(self, operator, *args):

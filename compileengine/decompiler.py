@@ -25,8 +25,8 @@ class Decompiler(ExpressionBlock):
     compileengine.expression.ExpressionBlock
     compileengine.expression.ExpressionIterator
     """
-    def __init__(self, handle, level=0):
-        ExpressionBlock.__init__(self, level)
+    def __init__(self, handle):
+        ExpressionBlock.__init__(self)
         self.handle = handle
         self.start = handle.tell()
         self.stop = None
