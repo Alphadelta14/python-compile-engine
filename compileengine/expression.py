@@ -102,6 +102,27 @@ class Expression(object):
         return False
 
 
+class WrapperExpression(Expression):
+    def __init__(self, expression):
+        self.target = expression
+
+    def is_return(self):
+        return self.target.is_return()
+
+    def is_block(self):
+        return self.target.is_block()
+
+    def __str__(self):
+        return str(self.target)
+
+    @property
+    def lines(self):
+        return self.target.lines
+
+    def __iter__(self):
+        return iter(self.target)
+
+
 class UnknownExpression(Expression):
     """An unknown expression. The value passed in here will be written back
     raw.
@@ -334,3 +355,6 @@ class ExpressionBlock(Expression):
 
     def statement(self, operator, *args):
         return StatementExpression(operator, *args)
+
+    def wrapper(self, expression):
+        return WrapperExpression(expression)
