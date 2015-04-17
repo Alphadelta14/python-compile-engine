@@ -12,12 +12,13 @@ from compileengine.variable import Variable
 
 
 class VariableCollection(object):
-    def __init__(self, engine):
+    def __init__(self, engine, inst_class):
         object.__setattr__(self, '_cache', {})
         object.__setattr__(self, 'engine', engine)
+        object.__setattr__(self, '_inst_class', inst_class)
 
     def _create(self, name):
-        var = Variable()
+        var = self.inst_class()
         var.name = name
         var.engine = self.engine
         return var
@@ -48,12 +49,6 @@ class Function(Variable):
 class FunctionCollection(VariableCollection):
     def __setattr__(self, name, value):
         raise TypeError('Cannot set a function')
-
-    def _create(self, name):
-        var = Function()
-        var.name = name
-        var.engine = self.engine
-        return var
 
 
 class NewBranch(Exception):
@@ -108,6 +103,8 @@ class Engine(BytesIO):
     """
     variable_collection_class = VariableCollection
     function_collection_class = FunctionCollection
+    variable_class = Variable
+    function_class = Function
     pointer_size = 4
 
     STATE_IDLE = 0
@@ -156,10 +153,10 @@ class Engine(BytesIO):
         self.write(block.buff)
 
     def _init_vars(self):
-        return VariableCollection(self)
+        return VariableCollection(self, self.variable_class)
 
     def _init_funcs(self):
-        return FunctionCollection(self)
+        return FunctionCollection(self, self.function_class)
 
     def compile(self, func):
         try:
