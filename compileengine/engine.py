@@ -112,6 +112,7 @@ class Engine(BytesIO):
 
     STATE_IDLE = 0
     STATE_BUILDING_BRANCHES = 1
+    STATE_COMPILING = 2
 
     def __init__(self):
         BytesIO.__init__(self)
@@ -120,6 +121,7 @@ class Engine(BytesIO):
         self.state = self.STATE_IDLE
         self.stack = []
         self.current_block = EngineBlock(self)
+        self.blocks = [self.current_block]
 
     def write_value(self, value, size=4):
         """Write a fixed length value to the buffer
@@ -144,6 +146,8 @@ class Engine(BytesIO):
         block.buff = self.getvalue()
         self.truncate(0)
         self.stack.append(block)
+        self.current_block = EngineBlock(self)
+        self.blocks.append(self.current_block)
 
     def pop(self):
         self.current_block.buff = self.getvalue()
@@ -158,12 +162,22 @@ class Engine(BytesIO):
         return FunctionCollection(self)
 
     def compile(self, func):
-        self.find_branches(func)
+        try:
+            self.state = self.STATE_BUILDING_BRANCHES
+            self._find_branches(func)
+            self.state = self.STATE_COMPILING
+            for path in self.paths:
+                self.branch_id = 0
+                self.current_path = path
+                func(self)
+                while self.stack:
+                    self.pop()
+        finally:
+            self.state = self.STATE_IDLE
 
-    def find_branches(self, func):
+    def _find_branches(self, func):
         self.paths = [()]
         self.loops = []
-        self.state = self.STATE_BUILDING_BRANCHES
         self.path_id = 0
         while self.path_id < len(self.paths):
             self.current_path = self.paths[self.path_id]
@@ -174,17 +188,28 @@ class Engine(BytesIO):
                 self.paths[self.path_id] = self.current_path+(NewBranch,)
             self.path_id += 1
         self.paths = [path for path in self.paths if path[-1] != NewBranch]
-        self.state = self.STATE_IDLE
+
+    def write_branch(self, condition):
+        self.write_value(0, self.pointer_size)
 
     def branch(self, condition):
         try:
             value = self.current_path[self.branch_id]
             self.branch_id += 1
-            return value
         except IndexError:
             self.paths.append(self.current_path+(True, ))
             self.paths.append(self.current_path+(False, ))
             raise NewBranch
+        if self.STATE_COMPILING:
+            old_block = self.current_block
+            self.push()
+            ofs = self.tell()
+            if ofs not in old_block.jumps:
+                old_block.jumps[ofs] = {}
+            old_block.jumps[ofs][value] = self.current_block
+            self.write_branch(condition)
+        return value
 
     def loop(self, condition):
+        raise NotImplementedError('Loops are not currently handled')
         return False
