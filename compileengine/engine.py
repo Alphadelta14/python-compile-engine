@@ -1,4 +1,6 @@
 
+import itertools
+
 try:
     from io import BytesIO
     binary_type = bytes
@@ -58,11 +60,55 @@ class NewBranch(Exception):
     pass
 
 
+class EngineBlock(object):
+    """Stored compiled block
+
+    Attributes
+    ----------
+    engine : Engine
+        Reference to parent engine
+    buff : str
+        Value of block
+    jumps : dict
+        Map of offset (relative to block start) to another block
+    offset : int, optional
+        Determined offset of block
+    """
+    def __init__(self, engine):
+        self.engine = engine
+        self.buff = None
+        self.jumps = {}
+        self.offset = -1
+
+    def __eq__(self, other):
+        if self is other:
+            return True
+        if len(self.buff) != len(other.buff):
+            return False
+        idx = 0
+        while idx < len(self.buff):
+            if idx in self.jumps:
+                if idx not in other.jumps:
+                    return False
+                if self.jumps[idx] != other.jumps[idx]:
+                    return False
+                idx += self.engine.pointer_size
+                continue
+            byte1 = self.buff[idx]
+            byte2 = other.buff[idx]
+            if byte1 != byte2:
+                return False
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+
 class Engine(BytesIO):
     """Execute a decompiled function with this object to compile it
     """
     variable_collection_class = VariableCollection
     function_collection_class = FunctionCollection
+    pointer_size = 4
 
     STATE_IDLE = 0
     STATE_BUILDING_BRANCHES = 1
@@ -72,6 +118,8 @@ class Engine(BytesIO):
         self.vars = self._init_vars()
         self.funcs = self._init_funcs()
         self.state = self.STATE_IDLE
+        self.stack = []
+        self.current_block = EngineBlock(self)
 
     def write_value(self, value, size=4):
         """Write a fixed length value to the buffer
@@ -90,6 +138,18 @@ class Engine(BytesIO):
 
     def reset(self):
         self.truncate(0)
+
+    def push(self):
+        block = self.current_block
+        block.buff = self.getvalue()
+        self.truncate(0)
+        self.stack.append(block)
+
+    def pop(self):
+        self.current_block.buff = self.getvalue()
+        block = self.stack.pop()
+        self.truncate(0)
+        self.write(block.buff)
 
     def _init_vars(self):
         return VariableCollection(self)
