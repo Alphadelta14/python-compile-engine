@@ -132,7 +132,7 @@ class Engine(BytesIO):
         """
         buff = binary_type()
         for i in range(size):
-            buff += chr((value >> i) & 0xFF)
+            buff += chr((value >> (i*8)) & 0xFF)
         self.write(buff)
 
     def reset(self):
@@ -167,6 +167,7 @@ class Engine(BytesIO):
             for path in self.paths:
                 self.branch_id = 0
                 self.current_path = path
+                self.push()
                 func(self)
                 while self.stack:
                     self.pop()
