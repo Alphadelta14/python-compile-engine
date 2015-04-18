@@ -152,6 +152,7 @@ class Engine(BytesIO):
     def pop(self):
         self.current_block.buff = self.getvalue()
         block = self.stack.pop()
+        self.current_block = block
         self.truncate(0)
         self.seek(0)
         self.write(block.buff)
@@ -202,7 +203,9 @@ class Engine(BytesIO):
                       if path[-1:] != (NewBranch, )]
 
     def write_branch(self, branch_state, condition):
+        ofs = self.tell()
         self.write_value(0, self.pointer_size)
+        return ofs
 
     def branch(self, condition):
         try:
@@ -214,16 +217,15 @@ class Engine(BytesIO):
             raise NewBranch
         if self.state == self.STATE_COMPILING:
             old_block = self.current_block
-            self.write_branch(True, condition)
-            self.write_branch(False, condition)
-            ofs = self.tell()
+            true_ofs = self.write_branch(True, condition)
+            false_ofs = self.write_branch(False, condition)
             self.push()
             # Write two jumps back to back. True then False
             # Only set the jump for the active branch though
             if value is True:
-                old_block.jumps[ofs-8] = self.current_block
+                old_block.jumps[true_ofs] = self.current_block
             if value is False:
-                old_block.jumps[ofs-4] = self.current_block
+                old_block.jumps[false_ofs] = self.current_block
         return value
 
     def loop(self, condition):
