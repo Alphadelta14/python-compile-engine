@@ -207,6 +207,10 @@ class Engine(BytesIO):
         self.write_value(0, self.pointer_size)
         return ofs
 
+    def write_jump(self):
+        self.write_value(0, self.pointer_size)
+        return self.tell()-self.pointer_size
+
     def branch(self, condition):
         try:
             value = self.current_path[self.branch_id]
@@ -231,3 +235,14 @@ class Engine(BytesIO):
     def loop(self, condition):
         raise NotImplementedError('Loops are not currently handled')
         return False
+
+    def call(self, new_func):
+        if self.state == self.STATE_COMPILING:
+            block = self.current_block
+            ofs = self.write_jump()
+            self.push()
+            block.jumps[ofs] = self.current_block
+        ret = new_func(self)
+        if self.state == self.STATE_COMPILING:
+            self.pop()
+        return ret
