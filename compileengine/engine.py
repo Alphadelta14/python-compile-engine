@@ -246,3 +246,8 @@ class Engine(BytesIO):
         if self.state == self.STATE_COMPILING:
             self.pop()
         return ret
+
+    def unknown(self, value, size):
+        if self.state == self.STATE_COMPILING:
+            self.write_value(value, size)
+        return '1+1'
