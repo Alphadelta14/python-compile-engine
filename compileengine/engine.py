@@ -119,6 +119,8 @@ class Engine(BytesIO):
         self.state = self.STATE_IDLE
         self.stack = []
         self.current_block = None
+        self.state_blocks = {}
+        self.path_stack = []
         self.blocks = []
 
     def write_value(self, value, size=4):
@@ -140,18 +142,26 @@ class Engine(BytesIO):
         self.truncate(0)
         self.seek(0)
 
-    def push(self):
+    def push(self, state=None):
         block = self.current_block
         block.buff = self.getvalue()
         self.truncate(0)
         self.seek(0)
         self.stack.append(block)
-        self.current_block = EngineBlock(self)
-        self.blocks.append(self.current_block)
+        if state is None:
+            state = object()
+        self.path_stack.append(state)
+        try:
+            self.current_block = self.state_blocks[tuple(self.path_stack)]
+        except KeyError:
+            self.current_block = EngineBlock(self)
+            self.blocks.append(self.current_block)
+            self.state_blocks[tuple(self.path_stack)] = self.current_block
 
     def pop(self):
         self.current_block.buff = self.getvalue()
         block = self.stack.pop()
+        self.path_stack.pop()
         self.current_block = block
         self.truncate(0)
         self.seek(0)
@@ -171,6 +181,7 @@ class Engine(BytesIO):
             self.state = self.STATE_BUILDING_BRANCHES
             self._find_branches(func)
             self.state = self.STATE_COMPILING
+            self.state_blocks = {}
             self.current_block = script_block = EngineBlock(self)
             self.blocks.append(self.current_block)
             for path in self.paths:
@@ -223,7 +234,7 @@ class Engine(BytesIO):
             old_block = self.current_block
             true_ofs = self.write_branch(True, condition)
             false_ofs = self.write_branch(False, condition)
-            self.push()
+            self.push(value)
             # Write two jumps back to back. True then False
             # Only set the jump for the active branch though
             if value is True:
@@ -244,6 +255,7 @@ class Engine(BytesIO):
             block.jumps[ofs] = self.current_block
         ret = new_func(self)
         if self.state == self.STATE_COMPILING:
+            self.write_end(ret)
             self.pop()
         return ret
 
