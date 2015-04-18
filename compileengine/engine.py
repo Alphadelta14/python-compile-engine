@@ -93,6 +93,7 @@ class EngineBlock(object):
             byte2 = other.buff[idx]
             if byte1 != byte2:
                 return False
+            idx += 1
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -117,8 +118,8 @@ class Engine(BytesIO):
         self.funcs = self._init_funcs()
         self.state = self.STATE_IDLE
         self.stack = []
-        self.current_block = EngineBlock(self)
-        self.blocks = [self.current_block]
+        self.current_block = None
+        self.blocks = []
 
     def write_value(self, value, size=4):
         """Write a fixed length value to the buffer
@@ -137,11 +138,13 @@ class Engine(BytesIO):
 
     def reset(self):
         self.truncate(0)
+        self.seek(0)
 
     def push(self):
         block = self.current_block
         block.buff = self.getvalue()
         self.truncate(0)
+        self.seek(0)
         self.stack.append(block)
         self.current_block = EngineBlock(self)
         self.blocks.append(self.current_block)
@@ -150,6 +153,7 @@ class Engine(BytesIO):
         self.current_block.buff = self.getvalue()
         block = self.stack.pop()
         self.truncate(0)
+        self.seek(0)
         self.write(block.buff)
 
     def _init_vars(self):
@@ -158,19 +162,27 @@ class Engine(BytesIO):
     def _init_funcs(self):
         return self.function_collection_class(self, self.function_class)
 
+    def write_end(self, value):
+        return
+
     def compile(self, func):
         try:
             self.state = self.STATE_BUILDING_BRANCHES
             self._find_branches(func)
             self.state = self.STATE_COMPILING
             self.truncate(0)
+            self.seek(0)
+            self.current_block = script_block = EngineBlock(self)
+            self.blocks.append(self.current_block)
             for path in self.paths:
                 self.branch_id = 0
                 self.current_path = path
-                self.push()
-                func(self)
+                ret = func(self)
+                self.write_end(ret)
+                self.current_block.buff = self.getvalue()
                 while self.stack:
                     self.pop()
+            return script_block
         finally:
             self.state = self.STATE_IDLE
 
