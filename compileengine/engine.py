@@ -18,7 +18,7 @@ class VariableCollection(object):
         object.__setattr__(self, '_inst_class', inst_class)
 
     def _create(self, name):
-        var = self.inst_class()
+        var = self._inst_class()
         var.name = name
         var.engine = self.engine
         return var
@@ -153,10 +153,10 @@ class Engine(BytesIO):
         self.write(block.buff)
 
     def _init_vars(self):
-        return VariableCollection(self, self.variable_class)
+        return self.variable_collection_class(self, self.variable_class)
 
     def _init_funcs(self):
-        return FunctionCollection(self, self.function_class)
+        return self.function_collection_class(self, self.function_class)
 
     def compile(self, func):
         try:
