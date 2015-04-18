@@ -170,11 +170,11 @@ class Engine(BytesIO):
             self.state = self.STATE_BUILDING_BRANCHES
             self._find_branches(func)
             self.state = self.STATE_COMPILING
-            self.truncate(0)
-            self.seek(0)
             self.current_block = script_block = EngineBlock(self)
             self.blocks.append(self.current_block)
             for path in self.paths:
+                self.truncate(0)
+                self.seek(0)
                 self.branch_id = 0
                 self.current_path = path
                 ret = func(self)
@@ -212,17 +212,18 @@ class Engine(BytesIO):
             self.paths.append(self.current_path+(True, ))
             self.paths.append(self.current_path+(False, ))
             raise NewBranch
-        if self.STATE_COMPILING:
+        if self.state == self.STATE_COMPILING:
             old_block = self.current_block
+            self.write_branch(True, condition)
+            self.write_branch(False, condition)
+            ofs = self.tell()
             self.push()
             # Write two jumps back to back. True then False
             # Only set the jump for the active branch though
             if value is True:
-                old_block.jumps[self.tell()] = self.current_block
-            self.write_branch(True, condition)
+                old_block.jumps[ofs-8] = self.current_block
             if value is False:
-                old_block.jumps[self.tell()] = self.current_block
-            self.write_branch(False, condition)
+                old_block.jumps[ofs-4] = self.current_block
         return value
 
     def loop(self, condition):
