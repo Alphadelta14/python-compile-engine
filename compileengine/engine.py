@@ -184,7 +184,8 @@ class Engine(BytesIO):
             except NewBranch:
                 self.paths[self.path_id] = self.current_path+(NewBranch,)
             self.path_id += 1
-        self.paths = [path for path in self.paths if path[-1] != NewBranch]
+        self.paths = [path for path in self.paths
+                      if path[-1:] != (NewBranch, )]
 
     def write_branch(self, condition):
         self.write_value(0, self.pointer_size)
