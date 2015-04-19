@@ -94,6 +94,7 @@ class EngineBlock(object):
             if byte1 != byte2:
                 return False
             idx += 1
+        return True
 
     def __ne__(self, other):
         return not self.__eq__(other)
@@ -212,6 +213,7 @@ class Engine(BytesIO):
             self.path_id += 1
         self.paths = [path for path in self.paths
                       if path[-1:] != (NewBranch, )]
+        self.paths.sort(reverse=True)
 
     def write_branch(self, branch_state, condition):
         ofs = self.tell()
@@ -251,7 +253,7 @@ class Engine(BytesIO):
         if self.state == self.STATE_COMPILING:
             block = self.current_block
             ofs = self.write_jump()
-            self.push()
+            self.push(new_func)
             block.jumps[ofs] = self.current_block
         ret = new_func(self)
         if self.state == self.STATE_COMPILING:
