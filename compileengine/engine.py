@@ -35,6 +35,9 @@ class VariableCollection(object):
         var = getattr(self, name)
         var.value = value
 
+    def __dir__(self):
+        return self._cache.keys()
+
 
 class Function(Variable):
     """Function
