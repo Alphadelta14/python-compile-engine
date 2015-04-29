@@ -18,6 +18,7 @@ class Variable(object):
         self.persist = False
         self.const = True
         self.refby = []
+        self.namespace = 'engine.vars.'
 
     def has_value(self):
         return self.value is not None
@@ -33,7 +34,7 @@ class Variable(object):
             name = self.fallback_name
         else:
             name = self.name
-        return 'engine.vars.{name}'.format(name=name)
+        return '{namespace}{name}'.format(namespace=self.namespace, name=name)
 
     def __repr__(self):
         return '<{cls} ({name}) at {id:#x}>'.format(
