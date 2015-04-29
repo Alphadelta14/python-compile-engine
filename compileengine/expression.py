@@ -303,6 +303,7 @@ class ExpressionBlock(Expression):
         self.header_lines = []
         self.footer_indent = indent-1
         self.footer_lines = []
+        self.namespace = 'engine.funcs.'
 
     def is_block(self):
         return True
@@ -329,7 +330,7 @@ class ExpressionBlock(Expression):
 
     def func(self, name, *args, **kwargs):
         indent = kwargs.pop('indent', kwargs.pop('level', self.indent))
-        kwargs['namespace'] = kwargs.pop('namespace', 'engine.funcs.')
+        kwargs['namespace'] = kwargs.pop('namespace', self.namespace)
         return Expression(name, *args, **kwargs)
 
     def noop(self):
